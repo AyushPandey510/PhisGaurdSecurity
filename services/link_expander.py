@@ -19,52 +19,37 @@ def expand_link(url: str, max_redirects: int = None):
         if not parsed.scheme or not parsed.netloc:
             return None, [], {}, "Invalid URL format"
 
-        redirect_chain = []
-        current_url = url
-        redirect_count = 0
         original_domain = parsed.netloc.lower()
 
-        while redirect_count < max_redirects:
-            try:
-                # Make HEAD request first (lighter than GET)
-                response = requests.head(current_url, allow_redirects=False, timeout=REQUEST_TIMEOUT)
+        try:
+            with requests.Session() as session:
+                session.max_redirects = max_redirects
+                response = session.get(url, allow_redirects=True, timeout=REQUEST_TIMEOUT)
 
-                if response.status_code in (301, 302, 303, 307, 308):
-                    # Redirect status codes
-                    next_url = response.headers.get('Location')
-                    if next_url:
-                        redirect_chain.append({
-                            'url': current_url,
-                            'status_code': response.status_code,
-                            'redirect_to': next_url
-                        })
+            # Build redirect chain from history
+            redirect_chain = []
+            for r in response.history:
+                redirect_chain.append({
+                    'url': r.url,
+                    'status_code': r.status_code,
+                    'redirect_to': r.headers.get('Location', '')
+                })
 
-                        # Handle relative URLs
-                        if not next_url.startswith(('http://', 'https://')):
-                            parsed_current = urlparse(current_url)
-                            if next_url.startswith('/'):
-                                next_url = f"{parsed_current.scheme}://{parsed_current.netloc}{next_url}"
-                            else:
-                                next_url = f"{parsed_current.scheme}://{parsed_current.netloc}/{parsed_current.path.rsplit('/', 1)[0]}/{next_url}"
+            final_url = response.url
 
-                        current_url = next_url
-                        redirect_count += 1
-                    else:
-                        break
-                else:
-                    # No more redirects
-                    break
-
-            except requests.exceptions.RequestException as e:
-                return current_url, redirect_chain, {}, f"Request error: {str(e)}"
-
-        if redirect_count >= max_redirects:
-            return current_url, redirect_chain, {}, "Maximum redirects exceeded"
+        except requests.exceptions.ConnectionError as e:
+            return url, [], {}, f"Connection failed: Unable to reach {url}"
+        except requests.exceptions.Timeout as e:
+            return url, [], {}, f"Timeout: {url} took too long to respond"
+        except requests.exceptions.TooManyRedirects as e:
+            return url, [], {}, f"Too many redirects: {url} has excessive redirect chain"
+        except requests.exceptions.RequestException as e:
+            return url, [], {}, f"Request failed: {str(e)}"
 
         # Enhanced analysis
-        analysis = analyze_redirect_chain(url, current_url, redirect_chain, original_domain)
+        analysis = analyze_redirect_chain(url, final_url, redirect_chain, original_domain)
 
-        return current_url, redirect_chain, analysis, None
+        return final_url, redirect_chain, analysis, None
 
     except Exception as e:
         return None, [], {}, f"Unexpected error: {str(e)}"

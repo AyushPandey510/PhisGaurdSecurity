@@ -268,7 +268,21 @@ def expand_link_endpoint():
     try:
         final_url, redirect_chain, analysis, error = expand_link(validated_url)
         if error:
-            return jsonify({"error": error}), 400
+            # Provide user-friendly error messages
+            if "Connection refused" in error or "Failed to establish a new connection" in error:
+                user_friendly_error = "Unable to connect to the URL. The website may be down or not responding."
+            elif "timeout" in error.lower():
+                user_friendly_error = "Request timed out. The website is taking too long to respond."
+            elif "Invalid URL" in error:
+                user_friendly_error = "The URL format is invalid."
+            else:
+                user_friendly_error = "Unable to expand the link. Please check if the URL is accessible."
+
+            return jsonify({
+                "error": user_friendly_error,
+                "technical_details": error if app.config['DEBUG'] else None,
+                "url": validated_url
+            }), 400
 
         return jsonify({
             "original_url": validated_url,
@@ -279,7 +293,10 @@ def expand_link_endpoint():
         })
     except Exception as e:
         logger.error(f"Error in expand_link_endpoint: {str(e)}")
-        return jsonify({"error": "Internal server error"}), 500
+        return jsonify({
+            "error": "An unexpected error occurred while expanding the link.",
+            "url": validated_url
+        }), 500
 
 @app.route('/check-breach', methods=['POST'])
 @limiter.limit("5 per minute")  # Stricter limit for breach checks

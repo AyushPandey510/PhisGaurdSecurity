@@ -336,6 +336,130 @@ header p {
     display: none;
 }
 
+/* Settings Section */
+.settings-section {
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 15px;
+    background-color: white;
+    margin-top: 10px;
+}
+
+/* Extension Status */
+.extension-status {
+    margin-bottom: 15px;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 600;
+    text-align: center;
+    border: 1px solid #ddd;
+}
+
+.extension-status[style*="color: #27ae60"] {
+    background-color: #d5f4e6;
+    border-color: #27ae60;
+}
+
+.extension-status[style*="color: #e74c3c"] {
+    background-color: #fadbd8;
+    border-color: #e74c3c;
+}
+
+.settings-section h3 {
+    color: #2c3e50;
+    margin-bottom: 15px;
+    font-size: 16px;
+    border-bottom: 1px solid #ecf0f1;
+    padding-bottom: 8px;
+}
+
+.setting-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    gap: 10px;
+}
+
+.setting-item label {
+    font-weight: 600;
+    color: #34495e;
+    flex: 1;
+    font-size: 14px;
+}
+
+.setting-item input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: #27ae60;
+}
+
+.setting-item select {
+    padding: 6px 8px;
+    border: 1px solid #bdc3c7;
+    border-radius: 3px;
+    font-size: 13px;
+    background-color: white;
+    min-width: 120px;
+}
+
+.settings-btn {
+    padding: 8px 16px;
+    background-color: #3498db;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.settings-btn:hover:not(:disabled) {
+    background-color: #2980b9;
+    transform: translateY(-1px);
+}
+
+.settings-btn:active:not(:disabled) {
+    background-color: #21618c;
+    transform: translateY(0);
+}
+
+.settings-btn:disabled {
+    background-color: #95a5a6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Settings status styling */
+#settings-status {
+    font-size: 12px;
+    font-weight: 600;
+    margin-left: 10px;
+    transition: color 0.3s ease;
+    min-height: 16px;
+    display: inline-block;
+}
+
+/* Loading animation for settings button */
+@keyframes settingsSaving {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
+}
+
+.settings-btn:disabled {
+    animation: settingsSaving 1.5s ease-in-out infinite;
+}
+
+#settings-status {
+    font-size: 12px;
+    font-weight: 600;
+    margin-left: 10px;
+}
+
 /* Responsive */
 @media (max-width: 400px) {
     body {
@@ -344,5 +468,15 @@ header p {
 
     .buttons-section {
         grid-template-columns: 1fr;
+    }
+
+    .setting-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+    }
+
+    .setting-item select {
+        width: 100%;
     }
 }

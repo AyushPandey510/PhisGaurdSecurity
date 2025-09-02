@@ -115,17 +115,19 @@ The extension requires these permissions for full functionality:
    ```
 
 3. **Configure environment variables**:
-   Copy the `.env` file and update the API keys:
-   ```bash
-   cp .env .env.local  # Optional: create a local override file
-   ```
+    Copy the `.env.example` template and fill in your API keys:
+    ```bash
+    cp .env.example .env
+    ```
 
-   Edit `.env` and set your API keys:
-   ```env
-   GOOGLE_SAFE_BROWSING_API_KEY=your-google-safe-browsing-api-key
-   PHISHTANK_API_KEY=your-phishtank-api-key
-   HIBP_API_KEY=your-haveibeenpwned-api-key
-   ```
+    Edit `.env` and set your API keys:
+    ```env
+    GOOGLE_SAFE_BROWSING_API_KEY=your-google-safe-browsing-api-key
+    PHISHTANK_API_KEY=your-phishtank-api-key
+    HIBP_API_KEY=your-haveibeenpwned-api-key
+    ```
+
+    **⚠️ Security Note**: Never commit the `.env` file to version control!
 
 ## 🔧 Configuration
 
@@ -379,12 +381,25 @@ This will test:
 
 ## 🔒 Security Considerations
 
-1. **API Keys**: Never commit API keys to version control
-2. **Environment Variables**: Use `.env` files for local development, environment variables for production
-3. **HTTPS**: Always use HTTPS in production
-4. **Rate Limiting**: Consider implementing rate limiting for API endpoints
-5. **Input Validation**: All endpoints validate input data
-6. **Error Handling**: Sensitive error details are not exposed in production
+### **API Keys & Secrets**
+1. **Never commit** `.env` files to version control
+2. **Use** `.env.example` as a template for required variables
+3. **Rotate** API keys regularly in production
+4. **Use** environment variables for production deployments
+
+### **Security Best Practices**
+1. **HTTPS**: Always use HTTPS in production
+2. **Rate Limiting**: Implemented with Flask-Limiter
+3. **Input Validation**: Comprehensive sanitization with bleach
+4. **CORS**: Properly configured for Chrome extension
+5. **Error Handling**: Sensitive details not exposed in production
+6. **Logging**: Structured JSON logging for monitoring
+
+### **Git Security**
+- **`.gitignore`** includes all sensitive files
+- **Environment templates** provided in `.env.example`
+- **API keys** protected from accidental commits
+- **Build artifacts** excluded from version control
 
 ## 📁 Project Structure
 
