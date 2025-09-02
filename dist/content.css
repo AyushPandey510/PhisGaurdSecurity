@@ -1,0 +1,105 @@
+/* PhisGuard Content Script Styles */
+
+.phisguard-indicator {
+  display: inline-block;
+  margin-right: 5px;
+  font-size: 14px;
+  cursor: help;
+  vertical-align: middle;
+  transition: opacity 0.2s ease;
+}
+
+.phisguard-link.high-risk {
+  border: 2px solid #ff4444 !important;
+  background-color: #ffeaea !important;
+  padding: 2px 4px !important;
+  border-radius: 3px !important;
+  position: relative;
+}
+
+.phisguard-link.medium-risk {
+  border: 2px solid #ffaa00 !important;
+  background-color: #fff5ea !important;
+  padding: 2px 4px !important;
+  border-radius: 3px !important;
+  position: relative;
+}
+
+.phisguard-link.safe {
+  border: 1px solid #44ff44 !important;
+  background-color: #eaffea !important;
+  padding: 2px 4px !important;
+  border-radius: 3px !important;
+  position: relative;
+}
+
+.phisguard-tooltip {
+  position: absolute;
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  z-index: 10000;
+  max-width: 300px;
+  word-wrap: break-word;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  display: none;
+}
+
+.phisguard-tooltip.show {
+  opacity: 1;
+}
+
+.phisguard-quick-action {
+  display: inline-block;
+  margin-left: 5px;
+  font-size: 12px;
+  cursor: pointer;
+  background: linear-gradient(135deg, #007bff, #0056b3);
+  color: white;
+  border: none;
+  padding: 3px 8px;
+  border-radius: 4px;
+  transition: background 0.2s ease, transform 0.1s ease;
+  vertical-align: middle;
+}
+
+.phisguard-quick-action:hover {
+  background: linear-gradient(135deg, #0056b3, #004085);
+  transform: translateY(-1px);
+}
+
+.phisguard-quick-action:active {
+  transform: translateY(0);
+}
+
+/* Animation for indicators */
+@keyframes phisguard-fade-in {
+  from { opacity: 0; transform: scale(0.8); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.phisguard-indicator {
+  animation: phisguard-fade-in 0.3s ease-out;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .phisguard-indicator {
+    font-size: 12px;
+    margin-right: 3px;
+  }
+
+  .phisguard-link {
+    padding: 1px 3px !important;
+  }
+
+  .phisguard-quick-action {
+    font-size: 11px;
+    padding: 2px 6px;
+  }
+}

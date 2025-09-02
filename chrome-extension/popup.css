@@ -1,0 +1,348 @@
+/* Reset and base styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f5f5f5;
+    color: #333;
+    width: 350px;
+    min-height: 400px;
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+.container {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+/* Header */
+header {
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+header h1 {
+    color: #2c3e50;
+    font-size: 24px;
+    margin-bottom: 5px;
+}
+
+header p {
+    color: #7f8c8d;
+    font-size: 14px;
+}
+
+/* URL Section */
+.url-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.url-section label {
+    font-weight: 600;
+    color: #34495e;
+}
+
+.url-section input {
+    padding: 10px;
+    border: 2px solid #bdc3c7;
+    border-radius: 5px;
+    font-size: 14px;
+    width: 100%;
+}
+
+.url-section button {
+    padding: 8px 12px;
+    background-color: #3498db;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 12px;
+    align-self: flex-start;
+}
+
+.url-section button:hover {
+    background-color: #2980b9;
+}
+
+/* Buttons Section */
+.buttons-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.check-btn {
+    padding: 12px;
+    background-color: #27ae60;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: background-color 0.3s;
+}
+
+.check-btn:hover {
+    background-color: #229954;
+}
+
+.check-btn:active {
+    background-color: #1e8449;
+}
+
+/* Breach Inputs */
+#breach-inputs {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+#breach-inputs.hidden {
+    display: none;
+}
+
+#breach-inputs input {
+    padding: 8px;
+    border: 1px solid #bdc3c7;
+    border-radius: 3px;
+    font-size: 14px;
+}
+
+.submit-btn {
+    padding: 10px 15px;
+    background-color: #e74c3c;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    margin-top: 10px;
+    transition: background-color 0.3s;
+}
+
+.submit-btn:hover {
+    background-color: #c0392b;
+}
+
+.submit-btn:active {
+    background-color: #a93226;
+}
+
+/* Loading */
+#loading {
+    text-align: center;
+    padding: 20px;
+}
+
+.spinner {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #3498db;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 10px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Results */
+#results {
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 15px;
+    background-color: white;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+#results.hidden {
+    display: none;
+}
+
+#results h2 {
+    color: #2c3e50;
+    margin-bottom: 10px;
+    font-size: 18px;
+}
+
+#results-content {
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+/* Risk Score Visualization */
+.risk-score-container {
+    margin: 10px 0;
+}
+
+.risk-score-bar {
+    position: relative;
+    width: 100%;
+    height: 24px;
+    background-color: #ecf0f1;
+    border-radius: 12px;
+    margin: 5px 0;
+    overflow: hidden;
+    border: 1px solid #bdc3c7;
+}
+
+.risk-score-fill {
+    height: 100%;
+    border-radius: 12px;
+    transition: width 0.5s ease;
+}
+
+.risk-score-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-weight: bold;
+    color: #2c3e50;
+    font-size: 12px;
+    text-shadow: 0 0 2px rgba(255, 255, 255, 0.8);
+}
+
+/* Details Section */
+.details-section {
+    margin-top: 15px;
+    padding-top: 10px;
+    border-top: 1px solid #ecf0f1;
+}
+
+.details-section ul {
+    margin: 5px 0 0 20px;
+    padding: 0;
+}
+
+.details-section li {
+    margin: 3px 0;
+    list-style-type: disc;
+    color: #555;
+}
+
+/* Redirect Chain Styling */
+.redirect-chain {
+    margin: 10px 0;
+    padding: 8px;
+    background-color: #f8f9fa;
+    border-radius: 5px;
+    border-left: 3px solid #3498db;
+}
+
+.chain-display {
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    color: #2c3e50;
+    word-break: break-all;
+    line-height: 1.4;
+    margin-top: 5px;
+    padding: 8px;
+    background-color: #ffffff;
+    border: 1px solid #e1e8ed;
+    border-radius: 3px;
+}
+
+/* Risk Flags */
+.risk-flags {
+    margin: 10px 0;
+    padding: 8px;
+    background-color: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 5px;
+    border-left: 3px solid #f39c12;
+}
+
+.risk-flags ul {
+    margin: 5px 0 0 0;
+    padding-left: 20px;
+}
+
+.risk-flags li {
+    color: #8b4513;
+    margin: 3px 0;
+    list-style-type: none;
+    position: relative;
+}
+
+.risk-flags li:before {
+    content: "⚠️";
+    position: absolute;
+    left: -20px;
+}
+
+/* Suspicious Warning */
+.suspicious-warning {
+    margin: 10px 0;
+    padding: 10px;
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    border-radius: 5px;
+    color: #721c24;
+    font-weight: bold;
+    text-align: center;
+    border-left: 3px solid #dc3545;
+}
+
+/* Risk levels */
+.risk-safe {
+    color: #27ae60;
+    font-weight: bold;
+}
+
+.risk-caution {
+    color: #f39c12;
+    font-weight: bold;
+}
+
+.risk-danger {
+    color: #e74c3c;
+    font-weight: bold;
+}
+
+/* Error */
+#error {
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    color: #721c24;
+    padding: 10px;
+    border-radius: 5px;
+    text-align: center;
+}
+
+#error.hidden {
+    display: none;
+}
+
+/* Hidden class */
+.hidden {
+    display: none;
+}
+
+/* Responsive */
+@media (max-width: 400px) {
+    body {
+        width: 300px;
+    }
+
+    .buttons-section {
+        grid-template-columns: 1fr;
+    }
+}

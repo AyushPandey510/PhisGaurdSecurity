@@ -1,0 +1,45 @@
+{
+  "name": "phisguard-chrome-extension",
+  "version": "1.0.0",
+  "description": "Chrome extension for phishing detection and security analysis using PhisGuard backend",
+  "main": "chrome-extension/manifest.json",
+  "scripts": {
+    "build": "npm run clean && npm run copy-files && npm run package",
+    "build:dev": "npm run clean && npm run copy-files",
+    "clean": "rm -rf dist",
+    "copy-files": "mkdir -p dist && cp -r chrome-extension/* dist/",
+    "package": "bestzip phisguard-extension-v$(node -p \"require('./package.json').version\").zip dist/*",
+    "package:dev": "bestzip phisguard-extension-dev.zip chrome-extension/*",
+    "version:bump": "npm version patch && npm run sync-version",
+    "version:bump:minor": "npm version minor && npm run sync-version",
+    "version:bump:major": "npm version major && npm run sync-version",
+    "sync-version": "node -e \"const pkg=require('./package.json'); const fs=require('fs'); const manifest=JSON.parse(fs.readFileSync('./chrome-extension/manifest.json')); manifest.version=pkg.version; fs.writeFileSync('./chrome-extension/manifest.json', JSON.stringify(manifest, null, 2)); console.log('Manifest version synced to', pkg.version);\"",
+    "dev": "npm run build:dev && concurrently \"npm run dev:backend\" \"npm run dev:extension\"",
+    "dev:backend": "python3 app.py",
+    "dev:extension": "http-server dist -p 3000 -c-1 --cors",
+    "start": "npm run build:dev && npm run dev:backend",
+    "install:all": "pip install -r requirements.txt && npm install",
+    "setup": "npm run install:all && npm run build:dev"
+  },
+  "keywords": [
+    "chrome-extension",
+    "phishing-detection",
+    "security",
+    "phisguard"
+  ],
+  "author": "PhisGuard Team",
+  "license": "MIT",
+  "devDependencies": {
+    "bestzip": "^2.2.1",
+    "concurrently": "^8.2.2",
+    "http-server": "^14.1.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/phisguard-chrome-extension"
+  },
+  "bugs": {
+    "url": "https://github.com/your-username/phisguard-chrome-extension/issues"
+  },
+  "homepage": "https://github.com/your-username/phisguard-chrome-extension#readme"
+}

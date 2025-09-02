@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PhisGuard Security</title>
+    <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>PhisGuard</h1>
+            <p>Security Analysis Tool</p>
+        </header>
+
+        <div class="url-section">
+            <label for="url-input">URL to Analyze:</label>
+            <input type="url" id="url-input" placeholder="Enter URL or use current tab">
+            <button id="get-current-url">Get Current Tab</button>
+        </div>
+
+        <div class="buttons-section">
+            <button id="check-url-btn" class="check-btn">Check URL</button>
+            <button id="check-ssl-btn" class="check-btn">Check SSL</button>
+            <button id="expand-link-btn" class="check-btn">Expand Link</button>
+            <button id="check-breach-btn" class="check-btn">Check Breach</button>
+        </div>
+
+        <div id="breach-inputs" class="hidden">
+            <label for="email-input">Email (optional):</label>
+            <input type="email" id="email-input" placeholder="Enter email">
+            <label for="password-input">Password (optional):</label>
+            <input type="password" id="password-input" placeholder="Enter password">
+            <button id="submit-breach-btn" class="submit-btn">Submit Breach Check</button>
+        </div>
+
+        <div id="loading" class="hidden">
+            <div class="spinner"></div>
+            <p>Analyzing...</p>
+        </div>
+
+        <div id="results" class="hidden">
+            <h2>Analysis Results</h2>
+            <div id="results-content"></div>
+        </div>
+
+        <div id="error" class="hidden">
+            <p class="error-message"></p>
+        </div>
+    </div>
+
+    <script src="popup.js"></script>
+</body>
+</html>
