@@ -204,6 +204,86 @@ pip install gunicorn
 gunicorn -w 4 -b 0.0.0.0:5000 app:app
 ```
 
+### Docker Deployment
+For easy deployment and portability, use Docker:
+
+1. **Build the Docker image**:
+   ```bash
+   docker build -t phisguard-backend .
+   ```
+
+2. **Run the container**:
+   ```bash
+   docker run -p 5000:5000 --env-file .env phisguard-backend
+   ```
+
+3. **Or use Docker Compose** (recommended):
+   ```bash
+   docker-compose up -d
+   ```
+
+### Cloud Deployment
+
+#### Heroku
+1. **Install Heroku CLI** and login:
+   ```bash
+   heroku login
+   ```
+
+2. **Create a new app**:
+   ```bash
+   heroku create your-phisguard-app
+   ```
+
+3. **Set environment variables**:
+   ```bash
+   heroku config:set FLASK_DEBUG=False
+   heroku config:set SECRET_KEY=your-secret-key
+   heroku config:set API_KEY=your-api-key
+   # Add other required API keys
+   ```
+
+4. **Deploy**:
+   ```bash
+   git push heroku main
+   ```
+
+#### AWS EC2
+1. **Launch an EC2 instance** with Ubuntu
+2. **Connect via SSH** and install Docker:
+   ```bash
+   sudo apt update
+   sudo apt install docker.io
+   sudo systemctl start docker
+   sudo systemctl enable docker
+   ```
+
+3. **Clone your repository** and run:
+   ```bash
+   docker-compose up -d
+   ```
+
+#### Google Cloud Run
+1. **Build and push to GCR**:
+   ```bash
+   gcloud builds submit --tag gcr.io/PROJECT-ID/phisguard-backend
+   ```
+
+2. **Deploy to Cloud Run**:
+   ```bash
+   gcloud run deploy --image gcr.io/PROJECT-ID/phisguard-backend --platform managed
+   ```
+
+#### Railway
+1. **Connect your GitHub repository** to Railway
+2. **Set environment variables** in Railway dashboard
+3. **Deploy automatically** on push
+
+#### Render
+1. **Connect your repository** to Render
+2. **Choose "Web Service"** and select Docker
+3. **Set environment variables** and deploy
+
 ## 📚 API Documentation
 
 ### Base URL

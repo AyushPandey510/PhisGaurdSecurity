@@ -3,6 +3,7 @@ import socket
 from datetime import datetime, timezone
 import urllib.parse
 import os
+from typing import Tuple, Dict, Any
 
 # Load configuration from environment variables
 REQUEST_TIMEOUT = int(os.getenv("REQUEST_TIMEOUT", 10))
@@ -16,7 +17,7 @@ KNOWN_CAS = {
     "Amazon", "Google Trust Services", "Microsoft", "Apple", "Mozilla"
 }
 
-def check_ssl(url: str):
+def check_ssl(url: str) -> Tuple[bool, Dict[str, Any]]:
     """
     Advanced SSL certificate analysis with expiry alerts, issuer validation, and wildcard detection.
     Returns (is_valid, details_dict)

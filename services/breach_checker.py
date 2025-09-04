@@ -2,13 +2,15 @@ import requests
 import hashlib
 import re
 import os
+from typing import Tuple, List, Optional, Dict, Any
 
 # Load configuration from environment variables
 HIBP_API_URL = os.getenv("HIBP_API_URL", "https://api.pwnedpasswords.com/range/")
+HIBP_EMAIL_API_URL = os.getenv("HIBP_EMAIL_API_URL", "https://haveibeenpwned.com/api/v3/breachedaccount/")
 REQUEST_TIMEOUT = int(os.getenv("REQUEST_TIMEOUT", 10))
 HIBP_API_KEY = os.getenv("HIBP_API_KEY")
 
-def check_email_breach(email: str):
+def check_email_breach(email: str) -> Tuple[bool, int, List[str], Optional[str]]:
     """
     Check if email has been involved in known data breaches.
     Returns (breached, breach_count, breaches_list)
@@ -27,7 +29,7 @@ def check_email_breach(email: str):
     except Exception as e:
         return False, 0, [], f"Error checking email breach: {str(e)}"
 
-def check_password_breach(password: str):
+def check_password_breach(password: str) -> Tuple[bool, int]:
     """
     Check if password has been compromised using k-anonymity.
     Returns (breached, breach_count)
@@ -65,7 +67,7 @@ def check_password_breach(password: str):
         # Return consistent format even on unexpected error
         return False, 0
 
-def check_password_strength(password: str):
+def check_password_strength(password: str) -> Tuple[int, List[str]]:
     """
     Basic password strength checker.
     Returns (strength_score, feedback)
@@ -111,7 +113,7 @@ def check_password_strength(password: str):
 
     return min(100, max(0, score)), feedback
 
-def comprehensive_security_check(email: str = None, password: str = None):
+def comprehensive_security_check(email: Optional[str] = None, password: Optional[str] = None) -> Dict[str, Any]:
     """
     Comprehensive security check combining breach and strength analysis.
     """

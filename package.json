@@ -15,10 +15,10 @@
     "version:bump:major": "npm version major && npm run sync-version",
     "sync-version": "node -e \"const pkg=require('./package.json'); const fs=require('fs'); const manifest=JSON.parse(fs.readFileSync('./chrome-extension/manifest.json')); manifest.version=pkg.version; fs.writeFileSync('./chrome-extension/manifest.json', JSON.stringify(manifest, null, 2)); console.log('Manifest version synced to', pkg.version);\"",
     "dev": "npm run build:dev && concurrently \"npm run dev:backend\" \"npm run dev:extension\"",
-    "dev:backend": "python3 app.py",
+    "dev:backend": "export PYTHONPATH=/home/ayush/.local/lib/python3.12/site-packages && python3 app.py",
     "dev:extension": "http-server dist -p 3000 -c-1 --cors",
     "start": "npm run build:dev && npm run dev:backend",
-    "install:all": "pip install -r requirements.txt && npm install",
+    "install:all": "pip install --break-system-packages -r requirements.txt && npm install",
     "setup": "npm run install:all && npm run build:dev"
   },
   "keywords": [

@@ -75,7 +75,7 @@ def test_basic_functionality():
 
         # Test link expander
         from services.link_expander import expand_link
-        final_url, redirect_chain, error = expand_link("https://www.google.com")
+        final_url, redirect_chain, analysis, error = expand_link("https://www.google.com")
         print(f"  ✅ Link Expansion: {'No redirects' if not redirect_chain else f'{len(redirect_chain)} redirects'} for google.com")
 
         # Test password breach checker

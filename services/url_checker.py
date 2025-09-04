@@ -1,13 +1,14 @@
 import os
 import requests
 import re
+from typing import Tuple, List
 
 # Load configuration from environment variables
 GOOGLE_SAFE_BROWSING_API_KEY = os.getenv("GOOGLE_SAFE_BROWSING_API_KEY")
 REQUEST_TIMEOUT = int(os.getenv("REQUEST_TIMEOUT", 10))
 MAX_REDIRECTS = int(os.getenv("MAX_REDIRECTS", 10))
 
-def check_url(url: str):
+def check_url(url: str) -> Tuple[int, List[str]]:
     """
     Check URL risk using:
     1. Enhanced Heuristics

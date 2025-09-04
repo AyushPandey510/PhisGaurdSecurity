@@ -2,38 +2,36 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from flask_talisman import Talisman
 from services.url_checker import check_url
 from services.ssl_checker import check_ssl
 from services.link_expander import expand_link
 from services.breach_checker import check_password_breach, check_password_strength, comprehensive_security_check
 from utils.risk_scorer import RiskScorer, quick_risk_assessment
+from utils.logger import get_security_logger
+from utils.config import get_settings
+from utils.health import get_health_checker
+from utils.cache import get_cache
 import os
 import logging
 import bleach
 import validators
+import traceback
+import time
 from email_validator import validate_email as validate_email_lib, EmailNotValidError
-from pythonjsonlogger import jsonlogger
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv()
 
+# Get application settings
+settings = get_settings()
+
 app = Flask(__name__)
 
-# Configure structured logging for security events
-import json
-from pythonjsonlogger import jsonlogger
-
-# Set up JSON logging
-log_handler = logging.StreamHandler()
-log_handler.setFormatter(jsonlogger.JsonFormatter())
+# Initialize security logger
+security_logger = get_security_logger()
 logger = logging.getLogger(__name__)
-logger.addHandler(log_handler)
 logger.setLevel(logging.INFO)
-
-# Prevent duplicate logs
-logger.propagate = False
 
 # Initialize rate limiter
 limiter = Limiter(
@@ -42,42 +40,37 @@ limiter = Limiter(
     default_limits=["200 per day", "50 per hour"]
 )
 
-# Initialize security headers
-talisman = Talisman(
-    app,
-    content_security_policy={
-        'default-src': "'self'",
-        'script-src': "'self'",
-        'style-src': "'self' 'unsafe-inline'",
-        'img-src': "'self' data:",
-    },
-    strict_transport_security=True,
-    strict_transport_security_max_age=31536000,
-    strict_transport_security_include_subdomains=True,
-    force_https=True,
-    force_file_save=False,
-    frame_options='DENY',
-    content_security_policy_nonce_in=['script-src'],
-    referrer_policy='strict-origin-when-cross-origin',
-    permissions_policy={
-        'geolocation': '()',
-        'microphone': '()',
-        'camera': '()',
-    }
-)
+# Disable Flask-Talisman for extension compatibility
+# Add basic security headers manually
+@app.after_request
+def add_security_headers(response):
+    """Add basic security headers"""
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'DENY'
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    return response
 
 # Configure CORS for Chrome extension communication
-CORS(app, origins=["chrome-extension://*"], supports_credentials=True, methods=["GET", "POST", "OPTIONS"], allow_headers=["Content-Type", "Authorization", "X-Requested-With"])
+CORS(app, origins=settings.cors_origins, supports_credentials=True, methods=["GET", "POST", "OPTIONS"], allow_headers=["Content-Type", "Authorization", "X-Requested-With", "X-API-Key"])
 
-# Configuration from environment variables
-app.config['DEBUG'] = os.getenv('FLASK_DEBUG', 'False').lower() == 'true'
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'default-secret-key-change-in-production')
-app.config['MAX_CONTENT_LENGTH'] = 1 * 1024 * 1024  # 1MB max request size
-app.config['PERMANENT_SESSION_LIFETIME'] = 1800  # 30 minutes
+# Additional CORS configuration for extension requests
+@app.before_request
+def handle_preflight():
+    if request.method == "OPTIONS":
+        response = app.make_response('')
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        response.headers.add("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        response.headers.add("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, X-API-Key")
+        return response
+
+# Configuration from settings
+app.config['DEBUG'] = settings.debug
+app.config['SECRET_KEY'] = settings.secret_key
+app.config['MAX_CONTENT_LENGTH'] = settings.max_content_length
+app.config['PERMANENT_SESSION_LIFETIME'] = settings.permanent_session_lifetime
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0  # Disable caching for security
-
-# Request timeout (30 seconds)
-app.config['TIMEOUT'] = 30
+app.config['API_KEY'] = settings.api_key
+app.config['TIMEOUT'] = settings.request_timeout
 
 # Security validation functions
 def sanitize_input(text):
@@ -137,24 +130,38 @@ def validate_password_strength(password):
 
     return True, None
 
-def log_security_event(event_type, details, ip_address):
+def log_security_event(event_type, details, ip_address, level='WARNING'):
     """Log security-related events in structured format"""
-    logger.warning("Security event detected", extra={
-        "event_type": event_type,
-        "ip_address": ip_address,
-        "details": details,
-        "timestamp": logging.Formatter().formatTime(logging.LogRecord(
-            name=logger.name,
-            level=logging.WARNING,
-            pathname="",
-            lineno=0,
-            msg="",
-            args=(),
-            exc_info=None
-        )),
-        "user_agent": request.headers.get('User-Agent', 'Unknown'),
-        "endpoint": request.path
-    })
+    security_logger.log_security_event(
+        event_type=event_type,
+        details=details,
+        ip_address=ip_address,
+        user_agent=request.headers.get('User-Agent', 'Unknown'),
+        endpoint=request.path,
+        level=level
+    )
+
+def require_api_key(f):
+    """Decorator to require API key for endpoints"""
+    from functools import wraps
+
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        # Skip API key check for extension requests
+        origin = request.headers.get('Origin', '')
+        user_agent = request.headers.get('User-Agent', '')
+
+        # Check for extension requests
+        if (origin.startswith('chrome-extension://') or
+            'Chrome' in user_agent and 'Extension' in user_agent):
+            return f(*args, **kwargs)
+
+        api_key = request.headers.get('X-API-Key') or request.args.get('api_key')
+        if not api_key or api_key != app.config['API_KEY']:
+            log_security_event("INVALID_API_KEY", "Missing or invalid API key", request.remote_addr)
+            return jsonify({"error": "Invalid or missing API key"}), 401
+        return f(*args, **kwargs)
+    return decorated_function
 
 @app.route('/', methods=['GET'])
 def root():
@@ -173,7 +180,14 @@ def root():
 
 @app.route('/health', methods=['GET'])
 def health_check():
+    """Basic health check endpoint"""
     return jsonify({"status": "healthy", "service": "phisguard-backend"})
+
+@app.route('/health/detailed', methods=['GET'])
+def detailed_health_check():
+    """Detailed health check with system and application metrics"""
+    health_checker = get_health_checker()
+    return jsonify(health_checker.get_full_health_report())
 
 @app.route('/extension/health', methods=['GET'])
 def extension_health_check():
@@ -187,6 +201,7 @@ def extension_health_check():
 
 @app.route('/check-url', methods=['POST'])
 @limiter.limit("10 per minute")
+@require_api_key
 def check_url_endpoint():
     data = request.get_json()
     if not data:
@@ -218,6 +233,7 @@ def check_url_endpoint():
 
 @app.route('/check-ssl', methods=['POST'])
 @limiter.limit("10 per minute")
+@require_api_key
 def check_ssl_endpoint():
     data = request.get_json()
     if not data:
@@ -248,6 +264,7 @@ def check_ssl_endpoint():
 
 @app.route('/expand-link', methods=['POST'])
 @limiter.limit("10 per minute")
+@require_api_key
 def expand_link_endpoint():
     data = request.get_json()
     if not data:
@@ -300,6 +317,7 @@ def expand_link_endpoint():
 
 @app.route('/check-breach', methods=['POST'])
 @limiter.limit("5 per minute")  # Stricter limit for breach checks
+@require_api_key
 def check_breach_endpoint():
     data = request.get_json()
     if not data:
@@ -354,6 +372,7 @@ def check_breach_endpoint():
 
 @app.route('/comprehensive-check', methods=['POST'])
 @limiter.limit("5 per minute")  # Stricter limit for comprehensive checks
+@require_api_key
 def comprehensive_check_endpoint():
     data = request.get_json()
     if not data:
@@ -445,42 +464,146 @@ def comprehensive_check_endpoint():
         logger.error(f"Error in comprehensive_check_endpoint: {str(e)}")
         return jsonify({"error": "Internal server error"}), 500
 
+@app.before_request
+def before_request():
+    """Log incoming requests and start timing"""
+    request.start_time = time.time()
+
 @app.after_request
-def add_extension_headers(response):
+def after_request(response):
+    """Log response details and timing"""
+    if hasattr(request, 'start_time'):
+        duration = time.time() - request.start_time
+        security_logger.log_api_request(
+            method=request.method,
+            endpoint=request.path,
+            ip_address=request.remote_addr,
+            user_agent=request.headers.get('User-Agent', 'Unknown'),
+            status_code=response.status_code,
+            duration=duration
+        )
+
+    # Add extension headers and CORS
     response.headers['X-Extension-Support'] = 'enabled'
-    response.headers['Access-Control-Allow-Origin'] = request.headers.get('Origin', '*')
-    if request.headers.get('Origin', '').startswith('chrome-extension://'):
-        response.headers['Access-Control-Allow-Origin'] = request.headers['Origin']
+
+    # Handle CORS for extension requests
+    origin = request.headers.get('Origin', '')
+    if origin.startswith('chrome-extension://') or not origin:
+        response.headers['Access-Control-Allow-Origin'] = origin or '*'
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With, X-API-Key'
+        response.headers['Access-Control-Allow-Credentials'] = 'true'
+
     return response
 
 @app.errorhandler(500)
 def handle_internal_error(error):
-    logger.error(f"Internal server error: {str(error)}")
-    return jsonify({
-        "error": "Internal server error",
-        "extension_support": True,
-        "message": "An unexpected error occurred while processing the extension request"
-    }), 500
+    """Handle internal server errors with detailed logging"""
+    error_details = {
+        "error_type": "InternalServerError",
+        "message": str(error),
+        "traceback": traceback.format_exc()
+    }
+
+    security_logger.log_error(
+        error_type="InternalServerError",
+        message=str(error),
+        traceback=traceback.format_exc(),
+        ip_address=getattr(request, 'remote_addr', 'Unknown'),
+        endpoint=getattr(request, 'path', 'Unknown')
+    )
+
+    # Return different error details based on debug mode
+    if app.config['DEBUG']:
+        return jsonify({
+            "error": "Internal server error",
+            "extension_support": True,
+            "message": "An unexpected error occurred",
+            "details": error_details
+        }), 500
+    else:
+        return jsonify({
+            "error": "Internal server error",
+            "extension_support": True,
+            "message": "An unexpected error occurred while processing the request"
+        }), 500
 
 @app.errorhandler(400)
 def handle_bad_request(error):
-    logger.warning(f"Bad request: {str(error)}")
+    """Handle bad request errors"""
+    security_logger.log_security_event(
+        event_type="BadRequest",
+        details={"error": str(error)},
+        ip_address=getattr(request, 'remote_addr', 'Unknown'),
+        user_agent=getattr(request, 'headers', {}).get('User-Agent', 'Unknown'),
+        endpoint=getattr(request, 'path', 'Unknown'),
+        level='WARNING'
+    )
+
     return jsonify({
         "error": "Bad request",
         "extension_support": True,
-        "message": "Invalid request from extension"
+        "message": "Invalid request format or parameters"
     }), 400
+
+@app.errorhandler(404)
+def handle_not_found(error):
+    """Handle 404 errors"""
+    security_logger.log_security_event(
+        event_type="NotFound",
+        details={"path": getattr(request, 'path', 'Unknown')},
+        ip_address=getattr(request, 'remote_addr', 'Unknown'),
+        user_agent=getattr(request, 'headers', {}).get('User-Agent', 'Unknown'),
+        endpoint=getattr(request, 'path', 'Unknown'),
+        level='INFO'
+    )
+
+    return jsonify({
+        "error": "Not found",
+        "extension_support": True,
+        "message": "The requested resource was not found"
+    }), 404
 
 @app.errorhandler(429)
 def handle_rate_limit_exceeded(error):
-    log_security_event("RATE_LIMIT_EXCEEDED", "Too many requests", request.remote_addr)
+    """Handle rate limit exceeded errors"""
+    log_security_event("RATE_LIMIT_EXCEEDED", "Too many requests", getattr(request, 'remote_addr', 'Unknown'))
     return jsonify({
         "error": "Too many requests",
         "extension_support": True,
         "message": "Rate limit exceeded. Please try again later."
     }), 429
 
+@app.errorhandler(Exception)
+def handle_unexpected_error(error):
+    """Catch-all handler for unexpected errors"""
+    error_details = {
+        "error_type": type(error).__name__,
+        "message": str(error),
+        "traceback": traceback.format_exc()
+    }
+
+    security_logger.log_error(
+        error_type="UnexpectedError",
+        message=str(error),
+        traceback=traceback.format_exc(),
+        ip_address=getattr(request, 'remote_addr', 'Unknown'),
+        endpoint=getattr(request, 'path', 'Unknown')
+    )
+
+    if app.config['DEBUG']:
+        return jsonify({
+            "error": "Unexpected error",
+            "extension_support": True,
+            "message": "An unexpected error occurred",
+            "details": error_details
+        }), 500
+    else:
+        return jsonify({
+            "error": "Unexpected error",
+            "extension_support": True,
+            "message": "An unexpected error occurred while processing the request"
+        }), 500
+
 if __name__ == '__main__':
-    port = int(os.getenv('PORT', 5000))
-    host = os.getenv('HOST', '0.0.0.0')
-    app.run(debug=app.config['DEBUG'], host=host, port=port)
+    app.run(debug=settings.debug, host=settings.host, port=settings.port)

@@ -1,4 +1,4 @@
-from typing import Dict, List, Any, Tuple
+from typing import Dict, List, Any, Tuple, Optional
 
 class RiskScorer:
     def __init__(self):
@@ -10,8 +10,8 @@ class RiskScorer:
             'breach_history': 0.1
         }
 
-    def calculate_overall_risk(self, url_results: Dict = None, ssl_results: Dict = None,
-                              link_results: Dict = None, breach_results: Dict = None) -> Dict[str, Any]:
+    def calculate_overall_risk(self, url_results: Optional[Dict] = None, ssl_results: Optional[Dict] = None,
+                               link_results: Optional[Dict] = None, breach_results: Optional[Dict] = None) -> Dict[str, Any]:
         """
         Calculate overall risk score based on all security checks.
         Returns comprehensive risk assessment.
@@ -160,7 +160,7 @@ class RiskScorer:
         else:
             return "very_low"
 
-    def _get_recommendations(self, score: float, components: Dict) -> List[str]:
+    def _get_recommendations(self, score: float, components: Dict[str, Any]) -> List[str]:
         """Generate actionable recommendations based on risk assessment."""
         recommendations = []
 
@@ -192,7 +192,7 @@ class RiskScorer:
         from datetime import datetime
         return datetime.utcnow().isoformat()
 
-def quick_risk_assessment(url: str = None, email: str = None, password: str = None) -> Dict[str, Any]:
+def quick_risk_assessment(url: Optional[str] = None, email: Optional[str] = None, password: Optional[str] = None) -> Dict[str, Any]:
     """
     Quick risk assessment for basic inputs.
     This is a simplified version for when you don't have full analysis results.
