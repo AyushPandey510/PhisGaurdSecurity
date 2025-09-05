@@ -32,8 +32,9 @@ COPY utils/ ./utils/
 COPY breaches.json .
 COPY .env* ./
 
-# Create logs directory
+# Create logs directory and verify files
 RUN mkdir -p /app/logs && \
+    ls -la /app/ && \
     chown -R appuser:appuser /app
 
 # Switch to non-root user
@@ -47,4 +48,4 @@ HEALTHCHECK --interval=30s --timeout=30s --start-period=60s --retries=3 \
     CMD curl -f http://localhost:5000/health || exit 1
 
 # Run the application
-CMD ["python", "app.py"]
+CMD ["python", "/app/app.py"]
