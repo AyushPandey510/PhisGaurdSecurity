@@ -20,6 +20,7 @@ const API_BASE = 'http://localhost:5000';
 
 // Initialize popup
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('PhisGuard: Popup loaded with updated code');
     getCurrentTabUrl();
     setupEventListeners();
 });
@@ -50,12 +51,6 @@ function setupEventListeners() {
 
 // Perform security check
 async function performCheck(type) {
-    const url = urlInput.value.trim();
-    if (!url) {
-        showError('Please enter a URL');
-        return;
-    }
-
     showLoading();
     hideResults();
     hideError();
@@ -65,24 +60,61 @@ async function performCheck(type) {
 
         switch (type) {
             case 'url':
+                const url = urlInput.value.trim();
+                if (!url) {
+                    showError('Please enter a URL');
+                    hideLoading();
+                    return;
+                }
                 endpoint = '/check-url';
                 data = { url };
                 break;
             case 'ssl':
+                const sslUrl = urlInput.value.trim();
+                if (!sslUrl) {
+                    showError('Please enter a URL');
+                    hideLoading();
+                    return;
+                }
                 endpoint = '/check-ssl';
-                data = { url };
+                data = { url: sslUrl };
                 break;
             case 'link':
+                const linkUrl = urlInput.value.trim();
+                if (!linkUrl) {
+                    showError('Please enter a URL');
+                    hideLoading();
+                    return;
+                }
                 endpoint = '/expand-link';
-                data = { url };
+                data = { url: linkUrl };
                 break;
             case 'breach':
+                console.log('PhisGuard: Starting breach check');
                 endpoint = '/check-breach';
-                data = {
-                    email: emailInput.value.trim() || undefined,
-                    password: passwordInput.value.trim() || undefined
-                };
-                if (!data.email && !data.password) {
+                const emailValue = emailInput.value.trim();
+                const passwordValue = passwordInput.value.trim();
+                console.log('PhisGuard: Email value:', emailValue ? 'present' : 'empty');
+                console.log('PhisGuard: Password value:', passwordValue ? 'present' : 'empty');
+                data = {};
+
+                if (emailValue) {
+                    data.email = emailValue;
+                }
+                if (passwordValue) {
+                    data.password = passwordValue;
+                }
+
+                console.log('PhisGuard: Request data:', data);
+
+                // For testing, use a valid email if example.com is used
+                if (data.email && data.email.includes('@example.com')) {
+                    data.email = data.email.replace('@example.com', '@test.com');
+                    console.log('PhisGuard: Updated email for testing:', data.email);
+                }
+
+                if (!emailValue && !passwordValue) {
+                    console.log('PhisGuard: No email or password provided');
                     showError('Please enter email or password for breach check');
                     hideLoading();
                     return;

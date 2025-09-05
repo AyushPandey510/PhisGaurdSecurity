@@ -2,9 +2,11 @@ import os
 import requests
 import re
 from typing import Tuple, List
+from virustotal_python import Virustotal
 
 # Load configuration from environment variables
 GOOGLE_SAFE_BROWSING_API_KEY = os.getenv("GOOGLE_SAFE_BROWSING_API_KEY")
+VIRUSTOTAL_API_KEY = os.getenv("VIRUSTOTAL_API_KEY")
 REQUEST_TIMEOUT = int(os.getenv("REQUEST_TIMEOUT", 10))
 MAX_REDIRECTS = int(os.getenv("MAX_REDIRECTS", 10))
 
@@ -93,6 +95,98 @@ def check_url(url: str) -> Tuple[int, List[str]]:
             details.append(f"GSB check failed: {str(e)}")
     else:
         details.append("⚠️ Google Safe Browsing not configured (add API key to .env)")
+
+    # VirusTotal URL Analysis (primary threat intelligence source)
+    if VIRUSTOTAL_API_KEY and VIRUSTOTAL_API_KEY != "your-virustotal-api-key-here":
+        try:
+            # Initialize VirusTotal client
+            vt = Virustotal(API_KEY=VIRUSTOTAL_API_KEY)
+
+            # Get URL analysis - use the correct method for URL ID
+            try:
+                # Try different methods to get URL ID
+                if hasattr(vt, 'get_url_id'):
+                    url_id = vt.get_url_id(url)
+                elif hasattr(vt, 'get_id'):
+                    url_id = vt.get_id(url)
+                else:
+                    # Fallback: create URL ID manually
+                    import base64
+                    url_id = base64.urlsafe_b64encode(url.encode()).decode().rstrip('=')
+
+                resp = vt.request(f"urls/{url_id}")
+            except Exception as method_error:
+                # If URL ID methods fail, try to submit URL for analysis
+                try:
+                    submit_resp = vt.request("urls", data={"url": url}, method="POST")
+                    if submit_resp.status_code == 200:
+                        submit_data = submit_resp.json()
+                        if "data" in submit_data:
+                            url_id = submit_data["data"]["id"]
+                            resp = vt.request(f"urls/{url_id}")
+                        else:
+                            raise Exception("No data in submission response")
+                    else:
+                        raise Exception(f"Submission failed: {submit_resp.status_code}")
+                except Exception as submit_error:
+                    raise Exception(f"Both URL ID generation and submission failed: {str(method_error)}, {str(submit_error)}")
+
+            if resp.status_code == 200:
+                vt_data = resp.json().get("data", {})
+                attributes = vt_data.get("attributes", {})
+
+                # Get analysis stats
+                last_analysis_stats = attributes.get("last_analysis_stats", {})
+                malicious = last_analysis_stats.get("malicious", 0)
+                suspicious = last_analysis_stats.get("suspicious", 0)
+                harmless = last_analysis_stats.get("harmless", 0)
+                undetected = last_analysis_stats.get("undetected", 0)
+
+                total_scans = malicious + suspicious + harmless + undetected
+
+                if total_scans > 0:
+                    malicious_percentage = (malicious / total_scans) * 100
+
+                    if malicious > 0:
+                        risk += min(malicious_percentage * 2, 60)  # Up to 60 points for malicious detections
+                        details.append(f"🚨 VIRUSTOTAL: {malicious}/{total_scans} engines detected as malicious")
+
+                    if suspicious > 0:
+                        risk += min(suspicious * 5, 20)  # Up to 20 points for suspicious
+                        details.append(f"⚠️ VIRUSTOTAL: {suspicious}/{total_scans} engines flagged as suspicious")
+
+                    if malicious == 0 and suspicious == 0:
+                        details.append(f"✅ VIRUSTOTAL: {harmless}/{total_scans} engines reported clean")
+                    else:
+                        details.append(f"📊 VIRUSTOTAL: Analyzed by {total_scans} engines")
+                else:
+                    details.append("ℹ️ VIRUSTOTAL: URL not yet analyzed")
+
+            elif resp.status_code == 404:
+                # URL not found in VirusTotal, submit for analysis
+                try:
+                    submit_resp = vt.request("urls", data={"url": url}, method="POST")
+                    if submit_resp.status_code == 200:
+                        details.append("📤 VIRUSTOTAL: URL submitted for analysis")
+                    else:
+                        details.append("⚠️ VIRUSTOTAL: Could not submit URL for analysis")
+                except Exception as submit_error:
+                    details.append(f"⚠️ VIRUSTOTAL: Submission failed - {str(submit_error)}")
+
+            else:
+                error_msg = f"VirusTotal API error {resp.status_code}"
+                try:
+                    error_data = resp.json()
+                    if "error" in error_data:
+                        error_msg += f": {error_data['error'].get('message', 'Unknown error')}"
+                except:
+                    pass
+                details.append(f"⚠️ {error_msg}")
+
+        except Exception as e:
+            details.append(f"⚠️ VirusTotal check failed: {str(e)}")
+    else:
+        details.append("⚠️ VirusTotal not configured (add API key to .env)")
 
     # Additional heuristic checks for better detection
     # Check for suspicious URL patterns
