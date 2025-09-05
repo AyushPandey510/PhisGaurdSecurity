@@ -1,8 +1,14 @@
-import psutil
 import time
 from datetime import datetime
 from utils.cache import get_cache
 from utils.logger import get_security_logger
+
+try:
+    import psutil
+    PSUTIL_AVAILABLE = True
+except ImportError:
+    PSUTIL_AVAILABLE = False
+    psutil = None
 
 class HealthChecker:
     """Comprehensive health checker for the application"""
@@ -14,6 +20,9 @@ class HealthChecker:
 
     def get_system_health(self):
         """Get system-level health metrics"""
+        if not PSUTIL_AVAILABLE:
+            return {"error": "System metrics unavailable - psutil not installed"}
+
         try:
             return {
                 "cpu_percent": psutil.cpu_percent(interval=1),
@@ -70,11 +79,7 @@ class HealthChecker:
         except ImportError:
             pass
 
-        try:
-            import psutil
-            dependencies["psutil"] = True
-        except ImportError:
-            pass
+        dependencies["psutil"] = PSUTIL_AVAILABLE
 
         return dependencies
 
