@@ -40,12 +40,12 @@ RUN mkdir -p /app/logs && \
 # Switch to non-root user
 USER appuser
 
-# Expose port
-EXPOSE 5000
+# Expose port (Railway will set PORT environment variable)
+EXPOSE $PORT
 
-# Health check
+# Health check (use PORT environment variable)
 HEALTHCHECK --interval=30s --timeout=30s --start-period=60s --retries=3 \
-    CMD curl -f http://localhost:5000/health || exit 1
+    CMD curl -f http://localhost:$PORT/health || exit 1
 
 # Run the application
 CMD ["python", "/app/app.py"]
