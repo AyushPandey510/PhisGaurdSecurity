@@ -1,13 +1,12 @@
 import requests
 from urllib.parse import urlparse
 import os
-from typing import Tuple, List, Dict, Any, Optional
 
 # Load configuration from environment variables
 REQUEST_TIMEOUT = int(os.getenv("REQUEST_TIMEOUT", 10))
 MAX_REDIRECTS = int(os.getenv("MAX_REDIRECTS", 10))
 
-def expand_link(url: str, max_redirects: Optional[int] = None) -> Tuple[Optional[str], List[Dict[str, str]], Dict[str, Any], Optional[str]]:
+def expand_link(url: str, max_redirects: int = None):
     if max_redirects is None:
         max_redirects = MAX_REDIRECTS
     """

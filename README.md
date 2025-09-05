@@ -65,13 +65,16 @@ npm run dev:extension
 
 ## 🚀 Features
 
-- **URL Risk Analysis**: Heuristic analysis, Google Safe Browsing integration, PhishTank checking
+- **URL Risk Analysis**: Heuristic analysis, Google Safe Browsing integration, VirusTotal API, PhishTank checking
 - **SSL Certificate Validation**: Certificate validity, expiration dates, issuer information
-- **Link Expansion**: Follows URL redirects, detects URL shorteners
-- **Password Breach Detection**: Checks passwords against Have I Been Pwned database
-- **Comprehensive Risk Scoring**: Combines all security checks into overall risk assessment
+- **Link Expansion**: Follows URL redirects, detects URL shorteners with visual chain display
+- **Password Breach Detection**: Local breach database with 2100+ entries (replaces HIBP API dependency)
+- **Email Breach Detection**: Checks emails against local breach database with domain conversion
+- **Comprehensive Risk Scoring**: Combines all security checks into overall risk assessment (0-100 scale)
 - **RESTful API**: Clean, documented endpoints for easy integration
+- **Chrome Extension**: Real-time browser security analysis with offline support
 - **Environment Configuration**: Secure configuration management with .env files
+- **Docker Support**: Complete containerization with health checks and volume mounts
 
 ## 🔌 Chrome Extension Usage
 
@@ -123,8 +126,7 @@ The extension requires these permissions for full functionality:
     Edit `.env` and set your API keys:
     ```env
     GOOGLE_SAFE_BROWSING_API_KEY=your-google-safe-browsing-api-key
-    PHISHTANK_API_KEY=your-phishtank-api-key
-    HIBP_API_KEY=your-haveibeenpwned-api-key
+    VIRUSTOTAL_API_KEY=your-virustotal-api-key
     ```
 
     **⚠️ Security Note**: Never commit the `.env` file to version control!
@@ -142,8 +144,9 @@ The application uses environment variables for configuration. Key settings in `.
 | `REQUEST_TIMEOUT` | HTTP request timeout (seconds) | `10` |
 | `MAX_REDIRECTS` | Maximum URL redirects to follow | `10` |
 | `GOOGLE_SAFE_BROWSING_API_KEY` | Google Safe Browsing API key | - |
-| `PHISHTANK_API_KEY` | PhishTank API key | - |
-| `HIBP_API_KEY` | Have I Been Pwned API key | - |
+| `VIRUSTOTAL_API_KEY` | VirusTotal API key | - |
+| `BREACH_DATA_FILE` | Path to local breach data file | `breaches.json` |
+| `API_KEY` | Backend API key for authentication | - |
 
 ## 🛠️ Development Setup
 
@@ -293,6 +296,25 @@ http://localhost:5000
 
 ### Endpoints
 
+#### 0. Root Endpoint
+- **GET** `/`
+- **Description**: Get API information and available endpoints
+- **Response**:
+  ```json
+  {
+    "message": "PhisGuard Backend API",
+    "version": "1.0.0",
+    "endpoints": {
+      "health": "/health",
+      "check_url": "/check-url",
+      "check_ssl": "/check-ssl",
+      "expand_link": "/expand-link",
+      "check_breach": "/check-breach",
+      "comprehensive_check": "/comprehensive-check"
+    }
+  }
+  ```
+
 #### 1. Health Check
 - **GET** `/health`
 - **Description**: Check if the service is running
@@ -304,7 +326,42 @@ http://localhost:5000
   }
   ```
 
-#### 2. URL Risk Analysis
+#### 2. Detailed Health Check
+- **GET** `/health/detailed`
+- **Description**: Comprehensive health check with system metrics
+- **Response**:
+  ```json
+  {
+    "status": "healthy",
+    "service": "phisguard-backend",
+    "system": {
+      "cpu_percent": 15.2,
+      "memory_percent": 45.8,
+      "disk_usage": {"total": 1000000000, "used": 500000000, "free": 500000000}
+    },
+    "application": {
+      "uptime_seconds": 3600,
+      "active_connections": 5,
+      "total_requests": 150
+    }
+  }
+  ```
+
+#### 3. Extension Health Check
+- **GET** `/extension/health`
+- **Description**: Health check optimized for Chrome extension
+- **Response**:
+  ```json
+  {
+    "status": "healthy",
+    "service": "phisguard-backend",
+    "extension_support": true,
+    "cors_enabled": true,
+    "supported_origins": ["chrome-extension://*"]
+  }
+  ```
+
+#### 4. URL Risk Analysis
 - **POST** `/check-url`
 - **Description**: Analyze URL for phishing and security risks
 - **Request Body**:
@@ -323,7 +380,7 @@ http://localhost:5000
   }
   ```
 
-#### 3. SSL Certificate Check
+#### 5. SSL Certificate Check
 - **POST** `/check-ssl`
 - **Description**: Validate SSL certificate for a domain
 - **Request Body**:
@@ -347,7 +404,7 @@ http://localhost:5000
   }
   ```
 
-#### 4. Link Expansion
+#### 6. Link Expansion
 - **POST** `/expand-link`
 - **Description**: Expand shortened URLs and follow redirects
 - **Request Body**:
@@ -372,43 +429,49 @@ http://localhost:5000
   }
   ```
 
-#### 5. Breach Check
+#### 7. Breach Check
 - **POST** `/check-breach`
-- **Description**: Check if email/password has been compromised
+- **Description**: Check if email/password has been compromised using local breach database
 - **Request Body** (email only):
   ```json
   {
-    "email": "user@example.com"
+    "email": "user162@test.com"
   }
   ```
 - **Request Body** (password only):
   ```json
   {
-    "password": "mypassword123"
+    "password": "butterfly"
   }
   ```
 - **Request Body** (both):
   ```json
   {
-    "email": "user@example.com",
-    "password": "mypassword123"
+    "email": "user162@test.com",
+    "password": "butterfly"
   }
   ```
-- **Response**:
+- **Response** (comprehensive check):
   ```json
   {
-    "password_check": {
+    "email_check": {
       "breached": true,
-      "breach_count": 1434
+      "breach_count": 1,
+      "breaches": ["Pwdb-Public"]
     },
-    "password_strength": {
-      "score": 65,
-      "feedback": ["Add uppercase letters", "Add special characters"]
-    }
+    "password_breach_check": {
+      "breached": true,
+      "breach_count": 1
+    },
+    "password_strength_check": {
+      "score": 35,
+      "feedback": ["Include uppercase letters", "Include numbers", "Include special characters"]
+    },
+    "overall_risk": "high"
   }
   ```
 
-#### 6. Comprehensive Security Check
+#### 8. Comprehensive Security Check
 - **POST** `/comprehensive-check`
 - **Description**: Full security analysis combining all checks
 - **Request Body**:
@@ -485,26 +548,45 @@ This will test:
 
 ```
 phisguard-backend/
-├── app.py                    # Main Flask application
-├── package.json              # Node.js build configuration
-├── requirements.txt          # Python dependencies
-├── .env                      # Environment configuration
-├── test_app.py              # Test suite
-├── chrome-extension/        # Chrome extension source files
-│   ├── manifest.json        # Extension manifest
-│   ├── popup.html           # Extension popup interface
-│   ├── popup.js             # Popup functionality
-│   ├── popup.css            # Popup styling
-│   ├── background.js        # Service worker for API communication
-│   ├── content.js           # Content script for page analysis
-│   └── content.css          # Content script styling
-├── services/                # Security analysis services
-│   ├── url_checker.py       # URL risk analysis
-│   ├── ssl_checker.py       # SSL certificate validation
-│   ├── link_expander.py     # URL expansion
-│   └── breach_checker.py    # Password breach checking
-└── utils/                   # Utility modules
-    └── risk_scorer.py       # Risk assessment logic
+├── 📄 app.py                          # Main Flask application
+├── 📄 dev.py                          # Development runner script
+├── 📄 run-dev.sh                      # Shell development script
+├── 📄 package.json                    # Node.js build configuration
+├── 📄 requirements.txt                # Python dependencies
+├── 📄 README.md                       # Project documentation
+├── 📄 HACKATHON_GUIDE.md             # Hackathon implementation guide
+├── 📄 RELEASE_NOTES.md               # Release notes and changelog
+├── 📄 .env                           # Environment configuration
+├── 📄 .env.example                   # Environment template
+├── 📄 breaches.json                  # Local breach database (2100+ entries)
+├── 📄 test_app.py                    # Test suite
+├── 📄 test_breach_debug.py           # Breach debugging utilities
+├── 📄 update_breach_data.py          # Breach data management
+├── 📄 docker-compose.yml             # Docker Compose configuration
+├── 📄 Dockerfile                     # Docker container configuration
+├── 📄 .dockerignore                  # Docker ignore patterns
+├── 📄 .gitignore                     # Git ignore patterns
+├── 📁 chrome-extension/              # Chrome extension source files
+│   ├── 📄 manifest.json              # Extension manifest (Manifest V3)
+│   ├── 📄 popup.html                 # Extension popup interface
+│   ├── 📄 popup.js                   # Popup functionality
+│   ├── 📄 popup.css                  # Popup styling
+│   ├── 📄 background.js              # Service worker for API communication
+│   ├── 📄 content.js                 # Content script for page analysis
+│   ├── 📄 content.css                # Content script styling
+│   └── 📄 icon.png                   # Extension icon
+├── 📁 services/                      # Security analysis services
+│   ├── 📄 url_checker.py             # URL risk analysis (Google Safe Browsing + VirusTotal)
+│   ├── 📄 ssl_checker.py             # SSL certificate validation
+│   ├── 📄 link_expander.py           # URL expansion and redirect analysis
+│   └── 📄 breach_checker.py          # Local breach database checking
+├── 📁 utils/                         # Utility modules
+│   ├── 📄 risk_scorer.py             # Risk assessment logic
+│   ├── 📄 config.py                  # Configuration management
+│   ├── 📄 logger.py                  # Logging utilities
+│   ├── 📄 health.py                  # Health check utilities
+│   └── 📄 cache.py                   # Caching utilities
+└── 📁 dist/                          # Built extension (auto-generated)
 ```
 
 ## 🤝 Contributing
@@ -520,21 +602,25 @@ phisguard-backend/
 For detailed release information, see [RELEASE_NOTES.md](RELEASE_NOTES.md)
 
 ### Version 1.0.0 (Current)
-- **Initial Release**: Complete PhisGuard system with backend API and Chrome extension
-- **Features**:
-  - Real-time URL risk analysis
-  - SSL certificate validation
-  - Link expansion and redirect tracking
-  - Password breach detection
-  - Comprehensive security scoring
-  - Chrome extension with offline caching
-  - RESTful API with full documentation
-- **Technical**:
+- **Complete Security System**: Full-stack PhisGuard with Flask backend and Chrome extension
+- **Advanced Security Features**:
+  - Real-time URL risk analysis (Google Safe Browsing + VirusTotal)
+  - SSL certificate validation with expiry alerts
+  - Link expansion with visual redirect chain display
+  - Local breach database (2100+ entries) replacing HIBP dependency
+  - Email breach detection with domain conversion support
+  - Comprehensive risk scoring (0-100 scale)
+  - Chrome extension with offline caching and real-time analysis
+  - RESTful API with full documentation and authentication
+- **Technical Excellence**:
   - Flask backend with modular service architecture
-  - Chrome Manifest V3 extension
+  - Chrome Manifest V3 extension with professional UI
+  - Docker containerization with health checks and volume mounts
   - Automated build system with npm scripts
-  - Environment-based configuration
-  - Comprehensive error handling and logging
+  - Environment-based configuration management
+  - Comprehensive error handling and structured logging
+  - Rate limiting and security headers
+  - Input validation and sanitization
 
 ### Future Releases
 - **v1.1.0**: Enhanced UI, additional security checks, performance optimizations

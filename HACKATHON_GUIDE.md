@@ -36,10 +36,10 @@ validators==0.22.0        # URL validation
 "bestzip": "^2.2.1"          # ZIP packaging
 ```
 
-### **External APIs**
+### **External APIs & Local Data**
 - **Google Safe Browsing API** - Real-time threat detection
-- **Have I Been Pwned API** - Password breach checking
-- **PhishTank API** - Phishing URL database
+- **VirusTotal API** - Advanced malware and phishing analysis
+- **Local Breach Database** - Password and email breach checking (2100+ entries)
 
 ---
 
@@ -81,7 +81,7 @@ phisguard-backend/
 - **URL Risk Analysis** - Heuristic + Google Safe Browsing
 - **SSL Certificate Validation** - Expiry alerts, issuer validation
 - **Link Expansion** - Redirect chain analysis with visual arrows
-- **Password Breach Detection** - Have I Been Pwned integration
+- **Password Breach Detection** - Local breach database with 2100+ entries
 - **Comprehensive Risk Scoring** - 0-100 risk assessment
 
 ### **🌐 Chrome Extension Features**
@@ -110,9 +110,10 @@ pip install -r requirements.txt --break-system-packages
 # Install Node.js dependencies
 npm install
 
-# Configure API keys in .env
+# Configure API keys and data file in .env
 GOOGLE_SAFE_BROWSING_API_KEY=your-api-key-here
-HIBP_API_KEY=your-hibp-key-here
+VIRUSTOTAL_API_KEY=your-virustotal-api-key-here
+BREACH_DATA_FILE=breaches.json
 ```
 
 ### **2. Run Everything**
@@ -381,11 +382,11 @@ Add comprehensive SSL certificate checking:
 
 ### **5. Password Breach Detection**
 ```
-Implement Have I Been Pwned integration:
-- Secure password checking without storing passwords
-- Breach count reporting
+Implement local breach database integration:
+- Secure password checking using SHA-1 hashes
+- Breach count reporting from local dataset
 - Password strength analysis
-- Rate limiting for API protection
+- Email breach checking with domain conversion
 - Comprehensive security reporting
 ```
 
@@ -437,7 +438,8 @@ Create development workflow with:
 ### **Technical Excellence**
 - ✅ **Modern Architecture** - Flask + Chrome Extension
 - ✅ **Security Best Practices** - Input validation, rate limiting
-- ✅ **External API Integration** - Google Safe Browsing, HIBP
+- ✅ **External API Integration** - Google Safe Browsing, VirusTotal
+- ✅ **Local Data Processing** - Breach database with 2100+ entries
 - ✅ **Error Handling** - Comprehensive exception management
 - ✅ **Performance** - Caching, async processing
 
@@ -465,7 +467,8 @@ Create development workflow with:
 FLASK_DEBUG=False
 SECRET_KEY=your-production-secret-key
 GOOGLE_SAFE_BROWSING_API_KEY=your-real-api-key
-HIBP_API_KEY=your-hibp-key
+VIRUSTOTAL_API_KEY=your-virustotal-api-key
+BREACH_DATA_FILE=breaches.json
 ```
 
 ### **Production Build**
